@@ -1,18 +1,22 @@
+from flask import Flask, jsonify
 import requests
-import pdb
+import pdb  # Importa o depurador
 
-# URL do HTTPbin
-url = "https://httpbin.org/get"
+app = Flask(__name__)
 
-# Parâmetros da requisição
-params = {"nome": "Judson", "mensagem": "Olá, HTTPbin!"}
+@app.route('/test-httpbin', methods=['GET'])
+def test_httpbin():
+    url = "https://httpbin.org/get"
+    params = {"nome": "Judson", "mensagem": "Olá, HTTPbin!"}
+    
+    # Ativa o depurador interativo aqui
+    pdb.set_trace()
 
-# Ativar o debugger antes de enviar a requisição
-pdb.set_trace()
+    # Faz a requisição GET para o httpbin
+    response = requests.get(url, params=params)
+    
+    # Retorna a resposta para o navegador
+    return jsonify(response.json())
 
-# Enviar a requisição GET com os parâmetros
-response = requests.get(url, params=params)
-
-# Interceptar a resposta
-print("Status Code:", response.status_code)
-print("Resposta JSON:", response.json())
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)
