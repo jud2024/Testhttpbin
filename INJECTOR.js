@@ -8,7 +8,6 @@ window.WebSocket = function(url, protocols) {
     // Cria a conexão original
     const socket = new OriginalWebSocket(url, protocols);
 
-    // Apenas intercepta quando o WebSocket estiver aberto
     socket.addEventListener('open', () => {
         console.log("WebSocket conectado:", url);
 
@@ -16,20 +15,20 @@ window.WebSocket = function(url, protocols) {
         const originalSend = socket.send;
         socket.send = function(data) {
             try {
-                // Tenta converter a mensagem em JSON para editar
-                let parsedData = JSON.parse(data);
+                // Só tenta modificar mensagens se forem JSON válidos
+                if (typeof data === "string") {
+                    const parsedData = JSON.parse(data);
 
-                // Modifica o campo "email", se existir
-                if (parsedData.email) {
-                    console.log("Email original:", parsedData.email);
-                    parsedData.email = "novo-email@example.com"; // Alteração desejada
-                    console.log("Email modificado:", parsedData.email);
+                    if (parsedData.email) {
+                        console.log("Email original:", parsedData.email);
+                        parsedData.email = "novo-email@example.com";
+                        console.log("Email modificado:", parsedData.email);
+                    }
+
+                    data = JSON.stringify(parsedData);
                 }
-
-                // Reenvia a mensagem modificada
-                data = JSON.stringify(parsedData);
             } catch (err) {
-                console.warn("Não foi possível modificar a mensagem:", err);
+                console.warn("Mensagem enviada não é um JSON válido:", data);
             }
 
             originalSend.call(socket, data);
@@ -37,7 +36,12 @@ window.WebSocket = function(url, protocols) {
 
         // Loga as mensagens recebidas
         socket.addEventListener('message', (event) => {
-            console.log("Mensagem recebida:", event.data);
+            try {
+                const parsedMessage = JSON.parse(event.data);
+                console.log("Mensagem JSON recebida:", parsedMessage);
+            } catch (err) {
+                console.log("Mensagem recebida (não JSON):", event.data);
+            }
         });
     });
 
@@ -50,10 +54,9 @@ const socket = new WebSocket("wss://echo.websocket.org");
 socket.addEventListener('open', () => {
     console.log("Conectado ao WebSocket!");
 
-    // Envia uma mensagem de teste
-    const mensagem = JSON.stringify({
-        email: "teste@email.com"
-    });
+    // Envia uma mensagem JSON
+    socket.send(JSON.stringify({ email: "teste@email.com" }));
 
-    socket.send(mensagem);
+    // Envia uma mensagem de texto simples (não JSON)
+    socket.send("Mensagem simples de teste");
 });
